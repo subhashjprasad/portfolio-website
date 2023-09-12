@@ -17,6 +17,7 @@ export default function Player()
     var walking_back = false
     var fading_in_back = false
     var fading_out_back = false
+    var flipped = false
 
     const jump = () =>
     {
@@ -28,7 +29,7 @@ export default function Player()
 
         if(hit.toi < 0.15)
         {
-            body.current.applyImpulse({ x: 0, y: 1.5, z: 0 })
+            if (!flipped) { body.current.applyImpulse({ x: 0, y: 1.8, z: 0 }) }
         }
     }
     
@@ -100,25 +101,30 @@ export default function Player()
         const impulse = { x: 0, y: 0, z: 0 }
         const torque = { x: 0, y: 0, z: 0 }
 
-        const torqueStrength = 1.5 * delta
-        const speed = 5 * delta
+        const torqueStrength = 0.5 * delta
+        const initial_speed = 1.5 * delta
+
+        const quaternion = quat(body.current.rotation())
+        const axis = new THREE.Quaternion();
+        const eulerRot = euler().setFromQuaternion(quaternion)
+
+        const zChangeBefore = ((axis.angleTo(quaternion) / Math.PI) - 0.5) * 2 * initial_speed
+        const xChangeBefore = (eulerRot.y / (Math.PI / 2)) * initial_speed
+        const speed = initial_speed - (Math.abs(Math.abs(zChangeBefore) - Math.abs(xChangeBefore)) * 0.3)
+
+        const zChange = (zChangeBefore / initial_speed) * speed
+        const xChange = (xChangeBefore / initial_speed) * speed
+
+        if (Math.abs(eulerRot.z) > 0.5 && Math.abs(eulerRot.z) < 2.64) {flipped = true}
+        else {flipped = false}
 
         if(forward)
         {
-            //impulse.z -= impulseStrength
-            //torque.x -= torqueStrength
-            const quaternion = quat(body.current.rotation())
-            const axis = new THREE.Quaternion();
-            const eulerRot = euler().setFromQuaternion(
-                quaternion
-            )
-            const zChange = ((axis.angleTo(quaternion) / Math.PI) - 0.5) * 2 * speed
-            const xChange = (eulerRot.y / (Math.PI / 2)) * speed
             impulse.x += xChange
             impulse.z -= zChange
 
             if (!fading_in && !walking) {fading_in = true}
-       } else if (!fading_out && walking) {fading_out = true}
+        } else if (!fading_out && walking) {fading_out = true}
 
         if(rightward)
         {
@@ -128,14 +134,6 @@ export default function Player()
 
         if(backward)
         {
-            //torque.x += torqueStrength
-            const quaternion = quat(body.current.rotation())
-            const axis = new THREE.Quaternion();
-            const eulerRot = euler().setFromQuaternion(
-                quaternion
-            )
-            const zChange = ((axis.angleTo(quaternion) / Math.PI) - 0.5) * 2 * speed
-            const xChange = (eulerRot.y / (Math.PI / 2)) * speed
             impulse.x -= xChange
             impulse.z += zChange
 
@@ -148,9 +146,10 @@ export default function Player()
             torque.y += torqueStrength
         }
 
-        console.log("walking: " + walking + " | fading_in: " + fading_in + " | fading_out: " + fading_out)
-        body.current.applyImpulse(impulse)
-        body.current.applyTorqueImpulse(torque)
+        if (!flipped) {
+            body.current.applyImpulse(impulse)
+            body.current.applyTorqueImpulse(torque)
+        }
 
         /**
          * Camera
@@ -174,34 +173,34 @@ export default function Player()
     })
 
     const dino = useGLTF('./Dino/DinoWalk.glb')
+    dino.scene.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+        }
+     });
     const animations = useAnimations(dino.animations, dino.scene)
 
     const walkingAnimation = animations.actions.walk
     const standingAnimation = animations.actions.Action
 
-    console.log(dino)
-    dino.scene.children.forEach((mesh) =>
-    {
-        mesh.castShadow = true
-    })
-
-    const size = 1
     return <RigidBody
         ref={ body }
         canSleep={ false }
         colliders={ false }
-        restitution={ 0.5 }
-        friction={ 0.5 } 
-        linearDamping={ 5 }
+        restitution={ 0.6 }
+        friction={ 0 } 
+        linearDamping={ 6 }
         angularDamping={ 10 }
         position={ [ 0, 1, 0 ] }
+        gravityScale={ 3 }
     >
         {/* <mesh castShadow>
             <icosahedronGeometry args={ [ 0.3, 1 ] } />
             <meshStandardMaterial flatShading color="#F0F7F4" />
         </mesh> */}
 
-    <primitive object={ dino.scene } scale={ size * 0.1 }/>
-    <CuboidCollider args={ [size * 0.3, size * 0.35, size * 0.5] } position={[0, size * 0.35, 0]} />
+    <primitive object={ dino.scene } scale={ 0.1 }/>
+    <CuboidCollider args={ [0.2, 0.2, 0.35] } position={[0, 0.2, -0.15]} castShadow/>
+    <CuboidCollider args={ [0.1, 0.2, 0.15] } position={[0, 0.5, 0.35]} castShadow/>
     </RigidBody>
 }
