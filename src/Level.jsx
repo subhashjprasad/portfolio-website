@@ -54,8 +54,9 @@ export function Title({position = [0, 0, 0]})
     })
 
     return <group position={ position }>
-        <RigidBody type="dynamic" colliders = "cuboid" restitution={ 0.2 } friction={ 1 }>
+        <RigidBody type="dynamic" colliders = {false} restitution={ 0.2 } friction={ 1 }>
             <primitive object={ title.scene } scale={ 0.1 }/>
+            <CuboidCollider args={ [2.5, 0.15, 0.07] } position={[0, 0.15, 0]}/>
         </RigidBody>
     </group>
 }
