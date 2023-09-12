@@ -2,6 +2,7 @@ import { Physics } from '@react-three/rapier'
 import Lights from './Lights.jsx'
 import { Level } from './Level.jsx'
 import Player from './Player.jsx'
+import { Text3D, OrbitControls } from '@react-three/drei'
 
 export default function Experience()
 {
@@ -14,6 +15,22 @@ export default function Experience()
             <Level />
             <Player />
         </Physics>
+
+        <Text3D 
+            font="./fonts/helvetiker_regular.typeface.json" 
+            position = {[-3, 2, 0]}
+            size={ 0.5 }
+            height={ 0.1 }
+            curveSegments={ 12 }
+            bevelEnabled
+            bevelThickness={ 0.02 }
+            bevelSize={ 0.02 }
+            bevelOffset={ 0 }
+            bevelSegments={ 5 }
+        >
+            WASD + Spacebar
+            <meshNormalMaterial />
+        </Text3D>
 
     </>
 }
